@@ -1,0 +1,17 @@
+{
+  "name": "irp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "lucene": "^2.1.1",
+    "natural": "^5.2.2",
+    "stopword": "^2.0.2"
+  }
+}
