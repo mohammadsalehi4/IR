@@ -72,6 +72,136 @@ module.exports.search=(req,res)=>{
         }
     }
 
+    const cosinoser=(doc)=>{
+        const splitString = doc.split(" ");
+        const newString = removeStopwords(splitString)
+        let newArr1=[]
+        let indexed=[]
+        for(let i=0;i<newString.length;i++){
+            newArr1.push(natural.PorterStemmer.stem(newString[i]))
+        }
+    
+        const lastArr=newArr1
+        newArr1=[]
+    
+        for(let i=0;i<lastArr.length;i++){
+            if(lastArr[i]!=[]){
+                newArr1.push(lastArr[i])
+            }
+        }
+
+        indexed.push({
+            indexes:newArr1[0],
+            document:1,
+            question:0
+
+        })
+
+        for(let i=1;i<newArr1.length;i++){
+            let checker=false
+            for(let j=0;j<indexed.length;j++){
+                if(indexed[j].indexes===newArr1[i]){
+                    checker=true
+                    indexed[j].document++
+                }
+            }
+            if(!checker){
+                indexed.push(
+                    {
+                        indexes:newArr1[i],
+                        document:1,
+                        question:0
+                    }
+                )
+            }
+        }
+
+        for(let i=0;i<newArr.length;i++){
+            let checker=false
+            for(let j=0;j<indexed.length;j++){
+                if(indexed[j].indexes===newArr[i]){
+                    checker=true
+                    indexed[j].question++
+                }
+            }
+            if(!checker){
+                indexed.push(
+                    {
+                        indexes:newArr[i],
+                        document:0,
+                        question:1
+                    }
+                )
+            }
+        }
+        let docValue=0
+        let qValue=0
+        for(let i=0;i<indexed.length;i++){
+            docValue=docValue+(indexed[i].document*indexed[i].document)
+            qValue=qValue+(indexed[i].question*indexed[i].question)
+        }
+        docValue= Math.sqrt(docValue)
+        qValue=Math.sqrt(qValue)
+
+        const allValue=docValue*qValue
+
+        let sum=0
+        for(let i=0;i<indexed.length;i++){
+            sum=sum+(indexed[i].document*indexed[i].question)
+        }
+
+        const lastValue=sum/allValue
+
+        return lastValue
+    }
+
+    const cosinos=(lastArray)=>{
+        const deg=[]
+        for(let i=0;i<lastArray.length;i++){
+            deg.push(cosinoser(lastArray[i].content))
+        }
+
+        const lastValue=[]
+
+        for(let i=0;i<lastArray.length;i++){
+            lastValue.push({
+                content:lastArray[i].content,
+                id:lastArray[i].Document_id,
+                cosinos:deg[i]
+            })
+        }
+
+        const notsortedValue=[]
+        notsortedValue.push(lastValue[0])
+
+        for(let i=1;i<lastValue.length;i++){
+            let checker=false
+            for(let j=0;j<notsortedValue.length;j++){
+                if(notsortedValue[j].id===lastValue[i].id){checker=true}
+            }
+            if(!checker){notsortedValue.push(lastValue[i])}
+        }
+
+        for(let i=0;i<notsortedValue.length;i++){
+            let a=notsortedValue[i]
+            let b=i
+            let c=notsortedValue[i].cosinos
+            for(let j=i;j<notsortedValue.length;j++){
+                if(notsortedValue[j].cosinos>c){
+                    a=notsortedValue[j]
+                    b=j
+                    c=notsortedValue[j].cosinos
+                }
+            }
+            notsortedValue[b]=notsortedValue[i]
+            notsortedValue[i]=a
+        }
+
+        return res.status(200).json({
+            result:notsortedValue
+        })
+    }
+
     const adder=(getAddress)=>{
 
         const getResult=[]
@@ -84,9 +214,7 @@ module.exports.search=(req,res)=>{
                         content:rslt.Main_text
                     })
                     if(i===getAddress.length-1){
-                        return res.status(200).json({
-                            msg:getResult
-                        })
+                        cosinos(getResult)
                     }
                 })
             }
